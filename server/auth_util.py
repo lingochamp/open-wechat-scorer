@@ -30,6 +30,16 @@ def get_signed_request(config, meta, salt=None):
               to set this argument)
     '''
 
+    meta_json = remove_trail_from_meta(meta)
+    try:
+        meta_dict = json.loads(meta_json)
+    except json.decoder.JSONDecodeError as jde:
+        log.warning(jde)
+        return ''
+    if 'item' in meta_dict and type(meta_dict['item']) == dict:
+        # Force speex quality 7 to match WeChat audio's encode setting
+        meta_dict['item']['quality'] = 7
+
     app_id = ''
     secret = ''
     try:
@@ -39,14 +49,7 @@ def get_signed_request(config, meta, salt=None):
         log.warning(ae)
     if app_id == None or secret == None or len(app_id) == 0 or len(secret) == 0:
         # AppID or secret not set - signing disabled
-        return meta
-
-    meta_json = remove_trail_from_meta(meta)
-    try:
-        meta_dict = json.loads(meta_json)
-    except json.decoder.JSONDecodeError as jde:
-        log.warning(jde)
-        return ''
+        return json.dumps(meta_dict)
 
     if salt == None or len(salt) == 0:
         salt = generate_salt()
